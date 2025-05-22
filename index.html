@@ -4,77 +4,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sonet Mini App</title>
-    <!-- Стили Telegram (для кнопок) -->
-    <link rel="stylesheet" href="https://telegram.org/css/telegram-web-app.css">
-    <!-- Наши стили -->
-    <link rel="stylesheet" href="styles/index.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 16px;
+            background: var(--tg-theme-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #000);
+        }
+        .hidden { display: none; }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        button {
+            background: var(--tg-theme-button-color, #007bff);
+            color: var(--tg-theme-button-text-color, #fff);
+            border: none;
+            cursor: pointer;
+        }
+        #user-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto;
+            display: block;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Экран авторизации -->
-        <div id="auth-screen">
-            <h1>🔐 Вход</h1>
-            <p>Введите код из раздела <b>Telegram Auth</b> в вашем профиле:</p>
-            <input type="text" id="auth-code" placeholder="Ваш код">
-            <button id="submit-code" class="btn">Продолжить</button>
-        </div>
-
-        <!-- Главное меню (скрыто) -->
-        <div id="main-menu" class="hidden">
-            <h1>👋 Привет, <span id="user-name">Гость</span>!</h1>
-            <button id="btn-profile" class="btn">👤 Профиль</button>
-            <button id="btn-services" class="btn">🛠️ Услуги</button>
-        </div>
+    <!-- Экран авторизации -->
+    <div id="auth-screen">
+        <h1>🔐 Авторизация</h1>
+        <p>Введите код из раздела <b>Telegram Auth</b>:</p>
+        <input type="text" id="auth-code" placeholder="Например: NSaZmD">
+        <button id="submit-code">Продолжить</button>
     </div>
 
-    <!-- Подключаем Telegram WebApp API -->
+    <!-- Главное меню -->
+    <div id="main-menu" class="hidden">
+        <img id="user-avatar" src="" alt="Аватар">
+        <h1 id="user-name"></h1>
+        <button id="btn-profile">👤 Профиль</button>
+        <button id="btn-services">🛠️ Услуги</button>
+        <button id="btn-logout">🚪 Выйти</button>
+    </div>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Наш скрипт -->
     <script>
-const tg = window.Telegram.WebApp;
-tg.expand();  // Растягиваем Mini App на весь экран
+        const tg = window.Telegram.WebApp;
+        tg.expand();
 
-// Элементы
-const authScreen = document.getElementById('auth-screen');
-const authCodeInput = document.getElementById('auth-code');
-const submitCodeBtn = document.getElementById('submit-code');
+        // Элементы
+        const authScreen = document.getElementById('auth-screen');
+        const mainMenu = document.getElementById('main-menu');
+        const authCodeInput = document.getElementById('auth-code');
+        const submitCodeBtn = document.getElementById('submit-code');
+        const userNameSpan = document.getElementById('user-name');
+        const userAvatar = document.getElementById('user-avatar');
 
-// Обработчик кнопки "Продолжить"
-submitCodeBtn.addEventListener('click', async () => {
-    const code = authCodeInput.value.trim();
-    
-    if (!code) {
-        alert('Введите код!'); // Временная замена tg.showAlert()
-        return;
-    }
+        // Обработчик авторизации
+        submitCodeBtn.addEventListener('click', async () => {
+            const code = authCodeInput.value.trim();
+            if (!code) return tg.showAlert('Введите код!');
 
-    console.log('Отправляем код:', code); // Логируем для отладки
+            try {
+                // Реальный запрос к вашему API
+                const response = await fetch(`http://snit.i-cream.ru/wp-json/telegram-bot/v1/verify-code/${code}`);
+                const data = await response.json();
 
-    try {
-        // Временный прокси для обхода CORS (удалите после настройки сервера)
-        const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-        const apiUrl = `http://snit.i-cream.ru/wp-json/telegram-bot/v1/verify-code/${code}`;
-        
-        const response = await fetch(proxyUrl + apiUrl);
-        const data = await response.json();
+                if (data.status === 'success') {
+                    saveUserData(data.user);
+                    showMainMenu(data.user);
+                } else {
+                    tg.showAlert('❌ Неверный код!');
+                }
+            } catch (error) {
+                tg.showAlert('⚠️ Ошибка сервера');
+                console.error(error);
+            }
+        });
 
-        console.log('Ответ API:', data); // Смотрим ответ сервера
-
-        if (data.status === 'success') {
-            alert('✅ Успешная авторизация!'); // Временное уведомление
-            localStorage.setItem('tg_user', JSON.stringify(data.user));
-            window.location.reload(); // Перезагружаем страницу
-        } else {
-            alert('❌ Неверный код!');
+        // Сохранение данных пользователя
+        function saveUserData(user) {
+            localStorage.setItem('tg_user', JSON.stringify(user));
         }
-    } catch (error) {
-        console.error('Ошибка:', error);
-        alert('⚠️ Ошибка сети. Проверьте консоль (F12).');
-    }
-});
 
+        // Показ главного меню
+        function showMainMenu(user) {
+            userNameSpan.textContent = user.name;
+            if (user.avatar) userAvatar.src = user.avatar;
+            authScreen.classList.add('hidden');
+            mainMenu.classList.remove('hidden');
+        }
+
+        // Выход
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            localStorage.removeItem('tg_user');
+            mainMenu.classList.add('hidden');
+            authScreen.classList.remove('hidden');
+        });
+
+        // Проверка существующей сессии
+        const savedUser = localStorage.getItem('tg_user');
+        if (savedUser) showMainMenu(JSON.parse(savedUser));
     </script>
-
-
 </body>
 </html>
