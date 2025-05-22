@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonet Mini App</title>
+    <!-- Стили Telegram (для кнопок) -->
+    <link rel="stylesheet" href="https://telegram.org/css/telegram-web-app.css">
+    <!-- Наши стили -->
+    <link rel="stylesheet" href="styles/index.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Экран авторизации -->
+        <div id="auth-screen">
+            <h1>🔐 Вход</h1>
+            <p>Введите код из раздела <b>Telegram Auth</b> в вашем профиле:</p>
+            <input type="text" id="auth-code" placeholder="Ваш код">
+            <button id="submit-code" class="btn">Продолжить</button>
+        </div>
+
+        <!-- Главное меню (скрыто) -->
+        <div id="main-menu" class="hidden">
+            <h1>👋 Привет, <span id="user-name">Гость</span>!</h1>
+            <button id="btn-profile" class="btn">👤 Профиль</button>
+            <button id="btn-services" class="btn">🛠️ Услуги</button>
+        </div>
+    </div>
+
+    <!-- Подключаем Telegram WebApp API -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Наш скрипт -->
+    <script src="scripts/index.js"></script>
+</body>
+</html>
