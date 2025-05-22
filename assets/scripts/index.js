@@ -1,56 +1,41 @@
 const tg = window.Telegram.WebApp;
 tg.expand();  // Растягиваем Mini App на весь экран
 
-// Элементы страницы
+// Элементы
 const authScreen = document.getElementById('auth-screen');
-const mainMenu = document.getElementById('main-menu');
 const authCodeInput = document.getElementById('auth-code');
 const submitCodeBtn = document.getElementById('submit-code');
-const userNameSpan = document.getElementById('user-name');
-
-// Проверяем, авторизован ли пользователь
-const savedUser = localStorage.getItem('tg_user');
-if (savedUser) {
-    const user = JSON.parse(savedUser);
-    showMainMenu(user);
-}
 
 // Обработчик кнопки "Продолжить"
 submitCodeBtn.addEventListener('click', async () => {
     const code = authCodeInput.value.trim();
+    
     if (!code) {
-        tg.showAlert('Введите код!');
+        alert('Введите код!'); // Временная замена tg.showAlert()
         return;
     }
 
-    tg.showAlert('Проверяем код...');  // Уведомление в Telegram
+    console.log('Отправляем код:', code); // Логируем для отладки
 
     try {
-        // Отправляем запрос к вашему API (подмените URL на свой!)
-        const response = await fetch(`http://snit.i-cream.ru/wp-json/telegram-bot/v1/verify-code/${code}`);
+        // Временный прокси для обхода CORS (удалите после настройки сервера)
+        const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+        const apiUrl = `http://snit.i-cream.ru/wp-json/telegram-bot/v1/verify-code/${code}`;
+        
+        const response = await fetch(proxyUrl + apiUrl);
         const data = await response.json();
 
+        console.log('Ответ API:', data); // Смотрим ответ сервера
+
         if (data.status === 'success') {
-            tg.showAlert('✅ Успешно!');
+            alert('✅ Успешная авторизация!'); // Временное уведомление
             localStorage.setItem('tg_user', JSON.stringify(data.user));
-            showMainMenu(data.user);
+            window.location.reload(); // Перезагружаем страницу
         } else {
-            tg.showAlert('❌ Неверный код!');
+            alert('❌ Неверный код!');
         }
     } catch (error) {
-        tg.showAlert('⚠️ Ошибка сети. Попробуйте позже.');
-        console.error(error);
+        console.error('Ошибка:', error);
+        alert('⚠️ Ошибка сети. Проверьте консоль (F12).');
     }
-});
-
-// Показываем главное меню
-function showMainMenu(user) {
-    authScreen.classList.add('hidden');
-    mainMenu.classList.remove('hidden');
-    userNameSpan.textContent = user.name;
-}
-
-// Обработчики кнопок меню
-document.getElementById('btn-profile').addEventListener('click', () => {
-    tg.showAlert('Профиль: ' + JSON.parse(localStorage.getItem('tg_user')).name);
 });
